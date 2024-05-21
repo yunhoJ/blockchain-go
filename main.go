@@ -3,27 +3,47 @@ package main
 import (
 	"coin/blockchain"
 	"fmt"
+	"html/template"
+	"log"
+	"net/http"
 )
 
-func main() {
-	chain := blockchain.GetBlockchain()
-	chain.AddBlock("test1")
-	chain.AddBlock("test2")
-	chain.AddBlock("test3")
+const (
+	port        string = ":4000"
+	templateDir string = "templates/"
+)
 
-	// chain_list := chain.AllBlock()
-	for _, v := range chain.AllBlock() {
-		fmt.Println(v)
-		fmt.Println(v.Data)
-		// result :
-		// &{Genesis 81ddc8d248b2dccdd3fdd5e84f0cad62b08f2d10b57f9a831c13451e5c5c80a5 }
-		// Genesis
-		// &{test1 c76474fc06647fc62e418fb5e11d1d512831ce0df85d09a303a6b4a162978e24 81ddc8d248b2dccdd3fdd5e84f0cad62b08f2d10b57f9a831c13451e5c5c80a5}
-		// test1
-		// &{test2 04a942bbdbc0a477c14d32187592b6215a0ac4175090f5d4705ac92560a2fda9 c76474fc06647fc62e418fb5e11d1d512831ce0df85d09a303a6b4a162978e24}
-		// test2
-		// &{test3 0b891e744da8183cc9abc9465446236cd05309ed00f963bc541e600ed8518bcb 04a942bbdbc0a477c14d32187592b6215a0ac4175090f5d4705ac92560a2fda9}
-		// test3
+type homepage struct {
+	PageTitle string
+	Block     []*blockchain.Block
+}
 
+var templates *template.Template
+
+func handleFunc(w http.ResponseWriter, r *http.Request) {
+	// telp := template.Must(template.ParseFiles("templates/pages/home.gohtml"))
+	data := homepage{"Home", blockchain.GetBlockchain().AllBlock()}
+	// telp.Execute(w, data)
+	templates.ExecuteTemplate(w, "home", data)
+
+}
+func handleAdd(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "GET":
+		templates.ExecuteTemplate(w, "add", nil)
+	case "POST":
+		r.ParseForm()
+		data := r.Form.Get("blockData")
+		blockchain.GetBlockchain().AddBlock(data)
+		http.Redirect(w, r, "/", http.StatusPermanentRedirect)
 	}
+
+}
+func main() {
+	templates = template.Must(template.ParseGlob(templateDir + "pages/*.gohtml"))
+	templates = template.Must(templates.ParseGlob(templateDir + "partials/*.gohtml"))
+	http.HandleFunc("/", handleFunc)
+	http.HandleFunc("/add", handleAdd)
+	fmt.Printf("Listening on http://localhost%s\n", port)
+	log.Fatal(http.ListenAndServe(port, nil))
 }

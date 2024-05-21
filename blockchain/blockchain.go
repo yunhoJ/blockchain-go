@@ -6,14 +6,14 @@ import (
 	"sync"
 )
 
-type block struct {
+type Block struct {
 	Data     string
-	hash     string
-	prevHash string
+	Hash     string
+	PrevHash string
 }
 
 type blockChain struct {
-	blocks []*block
+	blocks []*Block
 }
 
 // 싱글톤 패턴 하나의 인스턴스만을 공유하는 방법
@@ -21,8 +21,8 @@ var b *blockChain
 
 var Once sync.Once
 
-func createBlock(data string) *block {
-	newBlock := block{data, "", getLastHash()}
+func createBlock(data string) *Block {
+	newBlock := Block{data, "", getLastHash()}
 	newBlock.calculateHash()
 	return &newBlock
 
@@ -32,13 +32,13 @@ func getLastHash() string {
 	if totalBlocks == 0 {
 		return ""
 	}
-	return GetBlockchain().blocks[totalBlocks-1].hash
+	return GetBlockchain().blocks[totalBlocks-1].Hash
 
 }
-func (b *block) calculateHash() {
-	hash := sha256.Sum256([]byte(b.Data + b.prevHash))
+func (b *Block) calculateHash() {
+	hash := sha256.Sum256([]byte(b.Data + b.PrevHash))
 	hexHash := fmt.Sprintf("%x", hash)
-	b.hash = hexHash
+	b.Hash = hexHash
 }
 func (b *blockChain) AddBlock(data string) {
 	b.blocks = append(b.blocks, createBlock(data))
@@ -54,6 +54,6 @@ func GetBlockchain() *blockChain {
 	return b
 }
 
-func (b *blockChain) AllBlock() []*block {
+func (b *blockChain) AllBlock() []*Block {
 	return b.blocks
 }
