@@ -10,21 +10,28 @@ import (
 const port string = ":4000"
 
 type URLDescription struct {
-	URL         string `json:"url"` //json 일경우 소문자로 반환 함
+	URL         URL    `json:"url"` //json 일경우 소문자로 반환 함
 	Method      string `json:"method"`
 	Description string `json:"description"`
 	Payload     string `json:"payload,omitempty"` // omitempty 값이 없으면 key도 지움
 }
 
+type URL string
+
+// 인터페이스 구현 - 메서드의 시그니처를 구현 하면 된다
+func (u URL) MarshalText() ([]byte, error) {
+	url := fmt.Sprintf("http://localhost%s%s", port, u)
+	return []byte(url), nil
+}
 func documentation(rw http.ResponseWriter, r *http.Request) {
 	data := []URLDescription{
 		{
-			URL:         "/",
+			URL:         URL("/"),
 			Method:      "GET",
 			Description: "see documentation",
 		},
 		{
-			URL:         "/blocks",
+			URL:         URL("/blocks"),
 			Method:      "POST",
 			Description: "Add a Block ",
 			Payload:     "data:string",
