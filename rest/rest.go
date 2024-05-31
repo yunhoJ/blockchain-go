@@ -7,6 +7,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
+
+	"github.com/gorilla/mux"
 )
 
 var port string
@@ -16,6 +19,9 @@ type urlDescription struct {
 	Method      string `json:"method"`
 	Description string `json:"description"`
 	Payload     string `json:"payload,omitempty"` // omitempty 값이 없으면 key도 지움
+}
+type errorResponse struct {
+	ErrorMessage string `json:"errorMessage"`
 }
 
 type url string
@@ -43,7 +49,7 @@ func documentation(rw http.ResponseWriter, r *http.Request) {
 			Payload:     "data:string",
 		},
 		{
-			URL:         url("/blocks/{id}"),
+			URL:         url("/blocks/{height}"),
 			Method:      "GET",
 			Description: "see a block",
 		},
@@ -69,11 +75,27 @@ func blocks(rw http.ResponseWriter, r *http.Request) {
 		rw.WriteHeader(http.StatusCreated)
 	}
 }
+func block(rw http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	height := vars["height"]
+	id, err := strconv.Atoi(height)
+	utils.HandleErr(err)
+	block, err := blockchain.GetBlockchain().GetBlock(id)
+	encoder := json.NewEncoder(rw)
+
+	if err == blockchain.ErrNotFound {
+		encoder.Encode(errorResponse{fmt.Sprint(err)})
+	} else {
+		encoder.Encode(block)
+	}
+
+}
 func Start(aport int) {
-	handler := http.NewServeMux()
+	router := mux.NewRouter()
 	port = fmt.Sprintf(":%d", aport)
-	handler.HandleFunc("/", documentation)
-	handler.HandleFunc("/blocks", blocks)
+	router.HandleFunc("/", documentation).Methods("GET")
+	router.HandleFunc("/blocks", blocks).Methods("GET", "POST")
+	router.HandleFunc("/blocks/{height:[0-9]+}", block).Methods("GET")
 	fmt.Printf("Listening on http://localhost%s\n", port)
-	log.Fatal((http.ListenAndServe(port, handler)))
+	log.Fatal((http.ListenAndServe(port, router)))
 }
