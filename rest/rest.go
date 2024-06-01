@@ -90,8 +90,18 @@ func block(rw http.ResponseWriter, r *http.Request) {
 	}
 
 }
+
+func jsonContentTypeMiddleware(next http.Handler) http.Handler {
+	// 직접 struct, type을 만들어서 serveHttp를 구현 하는대신
+	// 알맞은 매개변수로 구현 해줌 - adapter
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "application/json")
+		next.ServeHTTP(w, r)
+	})
+}
 func Start(aport int) {
 	router := mux.NewRouter()
+	router.Use(jsonContentTypeMiddleware)
 	port = fmt.Sprintf(":%d", aport)
 	router.HandleFunc("/", documentation).Methods("GET")
 	router.HandleFunc("/blocks", blocks).Methods("GET", "POST")
