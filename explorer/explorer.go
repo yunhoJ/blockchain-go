@@ -22,7 +22,7 @@ type homepage struct {
 
 func handleFunc(w http.ResponseWriter, r *http.Request) {
 	// telp := template.Must(template.ParseFiles("templates/pages/home.gohtml"))
-	data := homepage{"Home", blockchain.GetBlockchain().AllBlock()}
+	data := homepage{"Home", blockchain.Blockchain().Blocks()}
 	// telp.Execute(w, data)
 	templates.ExecuteTemplate(w, "home", data)
 
@@ -34,7 +34,7 @@ func handleAdd(w http.ResponseWriter, r *http.Request) {
 	case "POST":
 		r.ParseForm()
 		data := r.Form.Get("blockData")
-		blockchain.GetBlockchain().AddBlock(data)
+		blockchain.Blockchain().AddBlock(data)
 		http.Redirect(w, r, "/", http.StatusPermanentRedirect)
 	}
 

@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"runtime"
 )
 
 func useage() {
@@ -13,7 +14,8 @@ func useage() {
 	fmt.Printf("use following command\n\n")
 	fmt.Printf("explorer:	start html explorer\n")
 	fmt.Printf("rest:		start rest api (recommand)\n\n")
-	os.Exit(0)
+	os.Exit(0)       // 프로그램을 종료함
+	runtime.Goexit() //defer를 실행 시켜주고 종료함
 
 }
 
