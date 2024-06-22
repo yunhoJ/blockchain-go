@@ -3,16 +3,21 @@ package blockchain
 import (
 	"coin/db"
 	"coin/utils"
-	"crypto/sha256"
 	"errors"
-	"fmt"
+	"strings"
+	"time"
 )
 
+// const difficulty int = 2
+
 type Block struct {
-	Data     string `json:"data"`
-	Hash     string `json:"hash"`
-	PrevHash string `json:"prevHash,omitempty"`
-	Height   int    `json:"height"`
+	Data       string `json:"data"`
+	Hash       string `json:"hash"`
+	PrevHash   string `json:"prevHash,omitempty"`
+	Height     int    `json:"height"`
+	Difficulty int    `json:"difficulty`
+	Nonce      int    `json:"nonce`
+	Timestamp  int    `json:"timestamp`
 }
 
 //	func (b *Block) toBytes() []byte {
@@ -25,15 +30,31 @@ type Block struct {
 func (b *Block) persist() {
 	db.SaveBlock(b.Hash, utils.ToBytes(b))
 }
+func (b *Block) mine() {
+	target := strings.Repeat("0", b.Difficulty)
+	b.Timestamp = int(time.Now().Unix())
+	for {
+		hash := utils.Hash(b)
+		if strings.HasPrefix(hash, target) {
+			b.Hash = hash
+			break
+		} else {
+			b.Nonce++
+		}
+
+	}
+}
 func createBlock(data string, prevHash string, height int) *Block {
 	block := &Block{
 		data,
 		"",
 		prevHash,
 		height,
+		Blockchain().difficulty(),
+		0,
+		0,
 	}
-	payload := block.Data + block.Hash + fmt.Sprint(block.Height)
-	block.Hash = fmt.Sprintf("%x", sha256.Sum256([]byte(payload)))
+	block.mine()
 	block.persist() // db에 저장
 	return block
 }
@@ -47,7 +68,7 @@ func FindBlock(hash string) (*Block, error) {
 		return nil, ErrNotFound
 	}
 
-	b := &Block{"", "", "", 0}
+	b := &Block{"", "", "", 0, 0, 0, 0}
 	b.restore(blockBytes)
 	return b, nil
 }
